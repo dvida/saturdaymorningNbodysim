@@ -42,6 +42,10 @@ def getForce(obj1, obj2, eps=1e-12):
 def timeStep(obj_list, time_step, collisions=False):
     """ Make one time step with the given objects. The time step is given in seconds. """
 
+    # Iterate over all bodies to update the position
+    for i in range(len(obj_list)):
+        obj_list[i].pos += obj_list[i].v*time_step/2
+
     # Iterate over all bodies and calculate new velocity vectors
     for i in range(len(obj_list)):
 
@@ -66,7 +70,8 @@ def timeStep(obj_list, time_step, collisions=False):
 
     # Update object position
     for i in range(len(obj_list)):
-        obj_list[i].pos += obj_list[i].v * time_step
+        obj_list[i].pos += obj_list[i].v*time_step/2
+
 
     if collisions:
         # Check for colisions
@@ -91,7 +96,7 @@ def timeStep(obj_list, time_step, collisions=False):
                         velocity = momentum/mass
 
                         # Calculate the new position
-                        position = (obj1.m*obj1.pos + obj2.m*obj2.pos)/(2*mass)
+                        position = (obj1.m*obj1.pos + obj2.m*obj2.pos)/mass
 
                         # Calculate new object radius (assume they are spheres)
                         r = np.power(obj1.r**3 + obj2.r**3, 1.0/3)
@@ -103,12 +108,14 @@ def timeStep(obj_list, time_step, collisions=False):
                         # Remove old bodies
                         obj_list.pop(i)
 
-                        if i < j:
+                        if i <= j:
                             j -= 1
                         obj_list.pop(j)
 
                         # Add new body to the list
                         obj_list.append(new_obj)
+
+                        break
 
 
     return obj_list
@@ -120,12 +127,23 @@ def plotBodies(obj_list):
     plt.clf()
 
     # Set plot limits
-    plt.xlim((-2.5e11, 2.5e11))
-    plt.ylim((-2.5e11, 2.5e11))
+    
+    # plt.xlim((-2.5e11, 2.5e11))
+    # plt.ylim((-2.5e11, 2.5e11))
+
+    plt.xlim((-20, 20))
+    plt.ylim((-20, 20))
 
     # Plot object positions
     for obj in obj_list:
+
+        # Plot position
         plt.scatter(obj.pos[0], obj.pos[1], s=norm_param*np.pi*obj.r**2, c=obj.color)
+
+        v_scale = 20
+
+        # Plot velocity vector
+        plt.arrow(obj.pos[0], obj.pos[1], v_scale*obj.v[0], v_scale*obj.v[1], head_width=0.03*v_scale, head_length=0.05*v_scale, color='r')
 
     # Update the plot
     plt.draw()
@@ -137,22 +155,23 @@ if __name__ == '__main__':
 
     # Testing
 
-    # obj1 = Body('1', np.array([0, 0, 0]), 10000000, np.array([-0.1, 0.2, 0]), 2)
-    # obj2 = Body('2', np.array([10, 10, 0]), 20000000, np.array([0, 0, 0]), 3)
-    # obj3 = Body('3', np.array([2.5, 0, 0]), 1000000000, np.array([0, 0, 0]), 1)
-    # obj4 = Body('4', np.array([-10, -10, 0]), 10000000, np.array([0, -0.1, 0]), 2)
+    obj1 = Body('1', np.array([0, 0, 0]), 1e8, np.array([0, 0.12, 0]), 2)
+    obj2 = Body('2', np.array([10, 10, 0]), 1e7, np.array([0, 0, 0]), 1)
+    obj3 = Body('3', np.array([5, 0, 0]), 1e9, np.array([0.01, 0, 0]), 3)
+    obj4 = Body('4', np.array([-10, -10, 0]), 1e8, np.array([0.1, 0.1, 0]), 2)
+    obj5 = Body('5', np.array([0, -10, 0]), 1e7, np.array([0.1, 0, 0]), 1)
 
-    # obj_list = [obj1, obj2, obj3, obj4]
+    obj_list = [obj1, obj2, obj3, obj4, obj5]
 
 
-    # Solar system
-    sun     = Body('sun',     np.array([0,       0,       0]), 2e30,   np.array([0,        0,       0]), 10, color='y')
-    mercury = Body('mercury', np.array([0,       5.8e10,  0]), 3.3e23, np.array([-47.4e3,  0,       0]), 2,  color='orange')
-    venus   = Body('venus',   np.array([108.2e9, 0,       0]), 4.9e24, np.array([0,        35e3,    0]), 3,  color='y')
-    earth   = Body('earth',   np.array([150e9,   0,       0]), 6e24,   np.array([0,        29865.3, 0]), 5,  color='b')
-    mars    = Body('mars',    np.array([0,       227.9e9, 0]), 6.4e23, np.array([-24130.8, 0,       0]), 4,  color='r')
+    # # The Solar System
+    # sun     = Body('sun',     np.array([0,       0,       0]), 2e30,   np.array([0,        0,       0]), 10, color='y')
+    # mercury = Body('mercury', np.array([0,       5.8e10,  0]), 3.3e23, np.array([-47.4e3,  0,       0]), 2,  color='orange')
+    # venus   = Body('venus',   np.array([108.2e9, 0,       0]), 4.9e24, np.array([0,        35e3,    0]), 3,  color='y')
+    # earth   = Body('earth',   np.array([150e9,   0,       0]), 6e24,   np.array([0,        29865.3, 0]), 5,  color='b')
+    # mars    = Body('mars',    np.array([0,       227.9e9, 0]), 6.4e23, np.array([-24130.8, 0,       0]), 4,  color='r')
 
-    obj_list = [sun, mercury, venus, earth, mars]
+    # obj_list = [sun, mercury, venus, earth, mars]
 
     # Find normalizing parameter for the object size plotting
     max_radius = max([obj.r for obj in obj_list])
@@ -164,8 +183,9 @@ if __name__ == '__main__':
 
     plotBodies(obj_list)
 
-    for i in range(300000):
-        obj_list = timeStep(obj_list, 20.0, collisions=False)
+    for i in range(500):
+        obj_list = timeStep(obj_list, 0.5, collisions=True)
 
-        if i%1000 == 0:
+        # Change the number after % to reduce the plotting 'framerate'
+        if i%5 == 0:
             plotBodies(obj_list)
